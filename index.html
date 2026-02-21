@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>World Flags</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-hover: #334155;
+      --border: #334155;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --correct: #22c55e;
+      --correct-bg: rgba(34, 197, 94, 0.15);
+      --wrong: #ef4444;
+      --wrong-bg: rgba(239, 68, 68, 0.15);
+      --gold: #eab308;
+      --radius: 12px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+
+    /* ---- Header ---- */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+    }
+
+    .header-inner {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .logo {
+      font-size: 1.25rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    nav {
+      display: flex;
+      gap: 4px;
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 3px;
+    }
+
+    nav button {
+      padding: 6px 14px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    nav button.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    /* ---- Main ---- */
+    main {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px 16px 100px;
+    }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ---- Continent Filter ---- */
+    .filters {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .filter-btn {
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filter-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    /* ---- Quiz View ---- */
+    .quiz-stats {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .stat-value.correct { color: var(--correct); }
+    .stat-value.wrong { color: var(--wrong); }
+    .stat-value.streak { color: var(--gold); }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .quiz-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 24px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .flag-display {
+      width: 100%;
+      max-width: 320px;
+      margin: 0 auto 24px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+      aspect-ratio: 3/2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #111;
+    }
+
+    .flag-display img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .quiz-prompt {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .option-btn {
+      padding: 14px 12px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+      line-height: 1.3;
+    }
+
+    .option-btn:active {
+      transform: scale(0.97);
+    }
+
+    .option-btn:not(.answered):hover {
+      border-color: var(--accent);
+      background: var(--surface-hover);
+    }
+
+    .option-btn.correct-answer {
+      border-color: var(--correct);
+      background: var(--correct-bg);
+      color: var(--correct);
+    }
+
+    .option-btn.wrong-answer {
+      border-color: var(--wrong);
+      background: var(--wrong-bg);
+      color: var(--wrong);
+    }
+
+    .option-btn.answered {
+      cursor: default;
+      opacity: 0.5;
+    }
+
+    .option-btn.correct-answer.answered,
+    .option-btn.wrong-answer.answered {
+      opacity: 1;
+    }
+
+    .quiz-next {
+      margin-top: 20px;
+      display: none;
+    }
+
+    .quiz-next.visible {
+      display: block;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 12px 32px;
+      border: none;
+      border-radius: var(--radius);
+      background: var(--accent);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn:hover { background: var(--accent-hover); }
+    .btn:active { transform: scale(0.97); }
+
+    .btn-outline {
+      background: transparent;
+      border: 2px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .btn-outline:hover {
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    /* ---- Result feedback ---- */
+    .result-text {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-top: 12px;
+      min-height: 1.5em;
+    }
+
+    .result-text.correct { color: var(--correct); }
+    .result-text.wrong { color: var(--wrong); }
+
+    /* ---- Study View ---- */
+    .study-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .study-count {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .search-box {
+      width: 100%;
+      padding: 10px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 1rem;
+      margin-bottom: 16px;
+    }
+
+    .search-box::placeholder { color: var(--text-muted); }
+    .search-box:focus { outline: none; border-color: var(--accent); }
+
+    .flag-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 12px;
+    }
+
+    .flag-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: 1px solid var(--border);
+    }
+
+    .flag-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+
+    .flag-card img {
+      width: 100%;
+      aspect-ratio: 3/2;
+      object-fit: cover;
+      display: block;
+    }
+
+    .flag-card-name {
+      padding: 8px 10px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ---- Modal ---- */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--surface);
+      border-radius: var(--radius);
+      max-width: 420px;
+      width: 100%;
+      overflow: hidden;
+      animation: modalIn 0.2s ease;
+    }
+
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.95) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal img {
+      width: 100%;
+      aspect-ratio: 3/2;
+      object-fit: cover;
+      display: block;
+    }
+
+    .modal-body {
+      padding: 20px;
+      text-align: center;
+    }
+
+    .modal-body h2 {
+      font-size: 1.3rem;
+      margin-bottom: 4px;
+    }
+
+    .modal-body p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .modal-close {
+      margin-top: 16px;
+      padding: 8px 24px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    /* ---- Progress View ---- */
+    .progress-section {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .progress-section h2 {
+      font-size: 1.1rem;
+      margin-bottom: 16px;
+    }
+
+    .big-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .big-stat {
+      text-align: center;
+      padding: 16px 8px;
+      background: var(--bg);
+      border-radius: var(--radius);
+    }
+
+    .big-stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+    }
+
+    .big-stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    .progress-bar-container {
+      margin-bottom: 12px;
+    }
+
+    .progress-bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+    }
+
+    .progress-bar-label span:last-child {
+      color: var(--text-muted);
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: var(--bg);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+
+    .progress-bar-fill.green { background: var(--correct); }
+    .progress-bar-fill.blue { background: var(--accent); }
+
+    .reset-btn {
+      margin-top: 12px;
+      padding: 10px 24px;
+      border: 1px solid var(--wrong);
+      border-radius: 8px;
+      background: transparent;
+      color: var(--wrong);
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .reset-btn:hover {
+      background: var(--wrong-bg);
+    }
+
+    /* Mastered list */
+    .mastered-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .mastered-tag {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: var(--correct-bg);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      border-radius: 20px;
+      font-size: 0.8rem;
+      color: var(--correct);
+    }
+
+    .mastered-tag img {
+      width: 20px;
+      height: 14px;
+      object-fit: cover;
+      border-radius: 2px;
+    }
+
+    .empty-msg {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-style: italic;
+    }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 480px) {
+      .options {
+        grid-template-columns: 1fr;
+      }
+
+      .flag-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      }
+
+      .big-stats {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .big-stat-value {
+        font-size: 1.5rem;
+      }
+
+      nav button {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+      }
+
+      .logo {
+        font-size: 1.1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">World Flags</div>
+    <nav>
+      <button class="active" data-view="quiz">Quiz</button>
+      <button data-view="study">Study</button>
+      <button data-view="progress">Progress</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- Quiz View -->
+  <div id="quiz-view" class="view active">
+    <div class="filters" id="quiz-filters"></div>
+
+    <div class="quiz-stats">
+      <div class="stat">
+        <div class="stat-value" id="score-correct">0</div>
+        <div class="stat-label">Correct</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value wrong" id="score-wrong">0</div>
+        <div class="stat-label">Wrong</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value streak" id="score-streak">0</div>
+        <div class="stat-label">Streak</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="score-best" style="color:var(--gold)">0</div>
+        <div class="stat-label">Best</div>
+      </div>
+    </div>
+
+    <div class="quiz-card">
+      <div class="flag-display">
+        <img id="quiz-flag" src="" alt="Flag" />
+      </div>
+      <div class="quiz-prompt">Which country does this flag belong to?</div>
+      <div class="options" id="quiz-options"></div>
+      <div class="result-text" id="result-text"></div>
+      <div class="quiz-next" id="quiz-next">
+        <button class="btn" id="next-btn">Next Flag</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Study View -->
+  <div id="study-view" class="view">
+    <div class="filters" id="study-filters"></div>
+    <input type="text" class="search-box" id="search-input" placeholder="Search countries..." />
+    <div class="study-header">
+      <div class="study-count" id="study-count"></div>
+    </div>
+    <div class="flag-grid" id="flag-grid"></div>
+  </div>
+
+  <!-- Progress View -->
+  <div id="progress-view" class="view">
+    <div class="progress-section">
+      <h2>Overall Stats</h2>
+      <div class="big-stats">
+        <div class="big-stat">
+          <div class="big-stat-value" id="total-answered" style="color:var(--accent)">0</div>
+          <div class="big-stat-label">Answered</div>
+        </div>
+        <div class="big-stat">
+          <div class="big-stat-value" id="total-accuracy" style="color:var(--correct)">0%</div>
+          <div class="big-stat-label">Accuracy</div>
+        </div>
+        <div class="big-stat">
+          <div class="big-stat-value" id="total-mastered" style="color:var(--gold)">0</div>
+          <div class="big-stat-label">Mastered</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="progress-section">
+      <h2>Continent Progress</h2>
+      <div id="continent-progress"></div>
+    </div>
+
+    <div class="progress-section">
+      <h2>Mastered Flags</h2>
+      <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:12px">
+        Get a flag right 3 times to master it
+      </p>
+      <div class="mastered-list" id="mastered-list"></div>
+    </div>
+
+    <div class="progress-section" style="text-align:center">
+      <button class="reset-btn" id="reset-btn">Reset All Progress</button>
+    </div>
+  </div>
+</main>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <img id="modal-flag" src="" alt="Flag" />
+    <div class="modal-body">
+      <h2 id="modal-name"></h2>
+      <p id="modal-continent"></p>
+      <button class="modal-close" id="modal-close">Close</button>
+    </div>
+  </div>
+</div>
+
+<script src="countries.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
