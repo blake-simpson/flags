@@ -75,6 +75,11 @@ function resetProgress() {
 // Navigation
 // ============================================================
 function switchView(view) {
+  // If leaving quiz, end the current session
+  if (state.currentView === "quiz" && view !== "quiz") {
+    endQuizSession();
+  }
+
   state.currentView = view;
   document.querySelectorAll("nav button").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.view === view);
@@ -83,8 +88,19 @@ function switchView(view) {
     v.classList.toggle("active", v.id === view + "-view");
   });
 
+  if (view === "quiz") newQuestion();
   if (view === "study") renderStudy();
   if (view === "progress") renderProgress();
+}
+
+function endQuizSession() {
+  // Save best streak, then reset all session stats
+  state.bestStreaks[state.difficulty] = state.bestStreak;
+  saveProgress();
+  state.correct = 0;
+  state.wrong = 0;
+  state.streak = 0;
+  updateScoreboard();
 }
 
 document.querySelectorAll("nav button").forEach((btn) => {
@@ -134,6 +150,8 @@ function setDifficulty(key) {
   saveProgress();
 
   state.difficulty = key;
+  // Persist to URL hash
+  window.location.hash = key;
   // Reset session stats for new difficulty
   state.correct = 0;
   state.wrong = 0;
@@ -669,6 +687,24 @@ document.getElementById("reset-btn").addEventListener("click", () => {
 // ============================================================
 // Init
 // ============================================================
+
+// Restore difficulty from URL hash
+function getDifficultyFromHash() {
+  const hash = window.location.hash.replace("#", "").toLowerCase();
+  return DIFFICULTIES[hash] ? hash : null;
+}
+
+const hashDifficulty = getDifficultyFromHash();
+if (hashDifficulty) {
+  state.difficulty = hashDifficulty;
+}
+
+// Sync difficulty when user navigates with back/forward
+window.addEventListener("hashchange", () => {
+  const d = getDifficultyFromHash();
+  if (d && d !== state.difficulty) setDifficulty(d);
+});
+
 loadProgress();
 updateScoreboard();
 renderDifficulty();
