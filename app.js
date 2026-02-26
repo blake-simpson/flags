@@ -126,7 +126,7 @@ function newQuestion() {
 
   // Update DOM
   const flagImg = document.getElementById("quiz-flag");
-  flagImg.src = getFlagUrl(answer.code, 640);
+  flagImg.src = getFlagUrl(answer.code);
   flagImg.alt = "Flag quiz";
 
   const optContainer = document.getElementById("quiz-options");
@@ -239,7 +239,7 @@ function renderStudy() {
     const card = document.createElement("div");
     card.className = "flag-card";
     card.innerHTML = `
-      <img src="${getFlagUrl(country.code, 320)}" alt="${country.name}" loading="lazy" />
+      <img src="${getFlagUrl(country.code)}" alt="${country.name}" loading="lazy" />
       <div class="flag-card-name">${country.name}</div>
     `;
     card.addEventListener("click", () => openModal(country));
@@ -256,7 +256,7 @@ document.getElementById("search-input").addEventListener("input", (e) => {
 // Modal
 // ============================================================
 function openModal(country) {
-  document.getElementById("modal-flag").src = getFlagUrl(country.code, 640);
+  document.getElementById("modal-flag").src = getFlagUrl(country.code);
   document.getElementById("modal-name").textContent = country.name;
   document.getElementById("modal-continent").textContent = country.continent;
   document.getElementById("modal-overlay").classList.add("open");
@@ -332,7 +332,7 @@ function renderProgress() {
     mastered.forEach((c) => {
       const tag = document.createElement("span");
       tag.className = "mastered-tag";
-      tag.innerHTML = `<img src="${getFlagUrl(c.code, 40)}" alt="" /> ${c.name}`;
+      tag.innerHTML = `<img src="${getFlagUrl(c.code)}" alt="" /> ${c.name}`;
       masteredListEl.appendChild(tag);
     });
   }
