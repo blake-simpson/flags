@@ -367,6 +367,7 @@ function selectBeastAnswer(country) {
   const dropdown = document.getElementById("beast-dropdown");
   const correct = country.code === state.currentQuestion.answer.code;
   const answerCode = state.currentQuestion.answer.code;
+  const prevBest = state.bestStreak;
 
   input.value = country.name;
   input.disabled = true;
@@ -385,6 +386,7 @@ function selectBeastAnswer(country) {
     input.classList.add("correct-answer");
     document.getElementById("result-text").textContent = "Correct!";
     document.getElementById("result-text").className = "result-text correct";
+    if (state.bestStreak > prevBest) triggerCelebration(state.bestStreak);
   } else {
     state.wrong++;
     state.streak = 0;
@@ -406,6 +408,7 @@ function handleAnswer(chosen, btnEl) {
 
   const correct = chosen.code === state.currentQuestion.answer.code;
   const answerCode = state.currentQuestion.answer.code;
+  const prevBest = state.bestStreak;
 
   // Init progress entry
   if (!state.progress[answerCode]) {
@@ -420,6 +423,7 @@ function handleAnswer(chosen, btnEl) {
     btnEl.classList.add("correct-answer");
     document.getElementById("result-text").textContent = "Correct!";
     document.getElementById("result-text").className = "result-text correct";
+    if (state.bestStreak > prevBest) triggerCelebration(state.bestStreak);
   } else {
     state.wrong++;
     state.streak = 0;
@@ -455,6 +459,57 @@ function updateScoreboard() {
   document.getElementById("score-wrong").textContent = state.wrong;
   document.getElementById("score-streak").textContent = state.streak;
   document.getElementById("score-best").textContent = state.bestStreak;
+}
+
+// ============================================================
+// Streak Celebration
+// ============================================================
+const CONFETTI_COLORS = ["#eab308", "#22c55e", "#3b82f6", "#ef4444", "#a855f7", "#f97316"];
+
+function triggerCelebration(streakNum) {
+  // Confetti burst
+  const container = document.createElement("div");
+  container.className = "celebration-container";
+  document.body.appendChild(container);
+
+  const cx = window.innerWidth / 2;
+  const cy = window.innerHeight / 2;
+
+  for (let i = 0; i < 40; i++) {
+    const particle = document.createElement("div");
+    particle.className = "confetti-particle";
+    const color = CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
+    particle.style.background = color;
+    particle.style.left = cx + "px";
+    particle.style.top = cy + "px";
+
+    const angle = (Math.PI * 2 * i) / 40 + (Math.random() - 0.5) * 0.5;
+    const dist = 120 + Math.random() * 200;
+    const dx = Math.cos(angle) * dist;
+    const dy = Math.sin(angle) * dist - 60;
+    const rot = (Math.random() - 0.5) * 720;
+
+    particle.style.setProperty("--dx", dx + "px");
+    particle.style.setProperty("--dy", dy + "px");
+    particle.style.setProperty("--rot", rot + "deg");
+    particle.style.width = (6 + Math.random() * 6) + "px";
+    particle.style.height = (6 + Math.random() * 6) + "px";
+    particle.style.animationDelay = (Math.random() * 0.15) + "s";
+
+    container.appendChild(particle);
+  }
+
+  // Banner
+  const banner = document.createElement("div");
+  banner.className = "new-best-banner";
+  banner.textContent = `New Best Streak: ${streakNum}!`;
+  document.body.appendChild(banner);
+
+  // Cleanup
+  setTimeout(() => {
+    container.remove();
+    banner.remove();
+  }, 1600);
 }
 
 document.getElementById("next-btn").addEventListener("click", newQuestion);
