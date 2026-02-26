@@ -117,6 +117,44 @@
       color: #fff;
     }
 
+    /* ---- Difficulty Selector ---- */
+    .difficulty-selector {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .diff-btn {
+      padding: 8px 20px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .diff-btn:hover {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+
+    .diff-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .diff-btn .diff-detail {
+      font-size: 0.7rem;
+      font-weight: 400;
+      opacity: 0.7;
+      display: block;
+    }
+
     /* ---- Quiz View ---- */
     .quiz-stats {
       display: flex;
@@ -185,6 +223,10 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
+    }
+
+    .options.cols-3 {
+      grid-template-columns: 1fr 1fr 1fr;
     }
 
     .option-btn {
@@ -528,7 +570,7 @@
 
     /* ---- Responsive ---- */
     @media (max-width: 480px) {
-      .options {
+      .options, .options.cols-3 {
         grid-template-columns: 1fr;
       }
 
@@ -572,6 +614,8 @@
   <!-- Quiz View -->
   <div id="quiz-view" class="view active">
     <div class="filters" id="quiz-filters"></div>
+
+    <div class="difficulty-selector" id="difficulty-selector"></div>
 
     <div class="quiz-stats">
       <div class="stat">

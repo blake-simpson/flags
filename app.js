@@ -3,18 +3,27 @@
 // ============================================================
 const MASTERY_THRESHOLD = 3;
 
+const DIFFICULTIES = {
+  easy: { label: "Easy", options: 4 },
+  medium: { label: "Medium", options: 6 },
+  hard: { label: "Hard", options: 8 },
+};
+
 let state = {
   currentView: "quiz",
   quizContinent: "All",
   studyContinent: "All",
   searchQuery: "",
-  // Quiz session
+  difficulty: "easy",
+  // Quiz session (per-difficulty)
   correct: 0,
   wrong: 0,
   streak: 0,
   bestStreak: 0,
   currentQuestion: null,
   answered: false,
+  // Persistent best streaks per difficulty: { easy: n, medium: n, hard: n }
+  bestStreaks: { easy: 0, medium: 0, hard: 0 },
   // Persistent progress: { [countryCode]: { right: n, wrong: n } }
   progress: {},
 };
@@ -26,20 +35,34 @@ function loadProgress() {
   try {
     const saved = localStorage.getItem("flags-progress");
     if (saved) state.progress = JSON.parse(saved);
-    const best = localStorage.getItem("flags-best-streak");
-    if (best) state.bestStreak = parseInt(best, 10) || 0;
+    // Load per-difficulty best streaks
+    const streaks = localStorage.getItem("flags-best-streaks");
+    if (streaks) {
+      state.bestStreaks = JSON.parse(streaks);
+    }
+    // Migrate old single best streak to easy mode
+    if (!streaks) {
+      const old = localStorage.getItem("flags-best-streak");
+      if (old) {
+        state.bestStreaks.easy = parseInt(old, 10) || 0;
+        localStorage.removeItem("flags-best-streak");
+      }
+    }
+    state.bestStreak = state.bestStreaks[state.difficulty] || 0;
   } catch {}
 }
 
 function saveProgress() {
   try {
     localStorage.setItem("flags-progress", JSON.stringify(state.progress));
-    localStorage.setItem("flags-best-streak", String(state.bestStreak));
+    state.bestStreaks[state.difficulty] = state.bestStreak;
+    localStorage.setItem("flags-best-streaks", JSON.stringify(state.bestStreaks));
   } catch {}
 }
 
 function resetProgress() {
   state.progress = {};
+  state.bestStreaks = { easy: 0, medium: 0, hard: 0 };
   state.bestStreak = 0;
   state.correct = 0;
   state.wrong = 0;
@@ -88,6 +111,40 @@ function setQuizContinent(c) {
   newQuestion();
 }
 
+// ============================================================
+// Difficulty
+// ============================================================
+function renderDifficulty() {
+  const container = document.getElementById("difficulty-selector");
+  container.innerHTML = "";
+  Object.entries(DIFFICULTIES).forEach(([key, diff]) => {
+    const btn = document.createElement("button");
+    btn.className = "diff-btn" + (key === state.difficulty ? " active" : "");
+    btn.innerHTML = `${diff.label}<span class="diff-detail">${diff.options} options</span>`;
+    btn.addEventListener("click", () => setDifficulty(key));
+    container.appendChild(btn);
+  });
+}
+
+function setDifficulty(key) {
+  if (key === state.difficulty) return;
+  // Save current best streak before switching
+  state.bestStreaks[state.difficulty] = state.bestStreak;
+  saveProgress();
+
+  state.difficulty = key;
+  // Reset session stats for new difficulty
+  state.correct = 0;
+  state.wrong = 0;
+  state.streak = 0;
+  // Load best streak for new difficulty
+  state.bestStreak = state.bestStreaks[key] || 0;
+
+  renderDifficulty();
+  updateScoreboard();
+  newQuestion();
+}
+
 function setStudyContinent(c) {
   state.studyContinent = c;
   renderFilters("study-filters", c, setStudyContinent);
@@ -115,12 +172,13 @@ function pickOptions(answer, pool, count = 4) {
 
 function newQuestion() {
   state.answered = false;
+  const optionCount = DIFFICULTIES[state.difficulty].options;
   const pool = getCountriesByContinent(state.quizContinent);
-  if (pool.length < 4) return;
+  if (pool.length < optionCount) return;
 
   const answer = pool[Math.floor(Math.random() * pool.length)];
   // Use the global pool for distractors so they're more challenging
-  const options = pickOptions(answer, COUNTRIES, 4);
+  const options = pickOptions(answer, COUNTRIES, optionCount);
 
   state.currentQuestion = { answer, options };
 
@@ -131,6 +189,8 @@ function newQuestion() {
 
   const optContainer = document.getElementById("quiz-options");
   optContainer.innerHTML = "";
+  // Use 3-column grid for 6 options, 2-column for 4 and 8
+  optContainer.className = "options" + (optionCount === 6 ? " cols-3" : "");
   options.forEach((opt) => {
     const btn = document.createElement("button");
     btn.className = "option-btn";
@@ -203,7 +263,7 @@ function updateScoreboard() {
 
 document.getElementById("next-btn").addEventListener("click", newQuestion);
 
-// Keyboard shortcut: press any key 1-4 or Enter/Space to advance
+// Keyboard shortcut: press number keys or Enter/Space to advance
 document.addEventListener("keydown", (e) => {
   if (state.currentView !== "quiz") return;
 
@@ -213,7 +273,8 @@ document.addEventListener("keydown", (e) => {
     return;
   }
 
-  if (!state.answered && e.key >= "1" && e.key <= "4") {
+  const maxKey = DIFFICULTIES[state.difficulty].options;
+  if (!state.answered && e.key >= "1" && e.key <= String(maxKey)) {
     const btns = document.querySelectorAll("#quiz-options .option-btn");
     const idx = parseInt(e.key) - 1;
     if (btns[idx]) btns[idx].click();
@@ -351,6 +412,7 @@ document.getElementById("reset-btn").addEventListener("click", () => {
 // ============================================================
 loadProgress();
 updateScoreboard();
+renderDifficulty();
 renderFilters("quiz-filters", state.quizContinent, setQuizContinent);
 renderFilters("study-filters", state.studyContinent, setStudyContinent);
 newQuestion();
