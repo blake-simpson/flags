@@ -21,6 +21,7 @@ let state = {
   wrong: 0,
   streak: 0,
   bestStreak: 0,
+  celebratedNewBest: false,
   currentQuestion: null,
   answered: false,
   // Persistent best streaks per difficulty
@@ -100,6 +101,7 @@ function endQuizSession() {
   state.correct = 0;
   state.wrong = 0;
   state.streak = 0;
+  state.celebratedNewBest = false;
   updateScoreboard();
 }
 
@@ -156,6 +158,7 @@ function setDifficulty(key) {
   state.correct = 0;
   state.wrong = 0;
   state.streak = 0;
+  state.celebratedNewBest = false;
   // Load best streak for new difficulty
   state.bestStreak = state.bestStreaks[key] || 0;
 
@@ -385,7 +388,6 @@ function selectBeastAnswer(country) {
   const dropdown = document.getElementById("beast-dropdown");
   const correct = country.code === state.currentQuestion.answer.code;
   const answerCode = state.currentQuestion.answer.code;
-  const prevBest = state.bestStreak;
 
   input.value = country.name;
   input.disabled = true;
@@ -399,15 +401,19 @@ function selectBeastAnswer(country) {
   if (correct) {
     state.correct++;
     state.streak++;
-    if (state.streak > state.bestStreak) state.bestStreak = state.streak;
     state.progress[answerCode].right++;
     input.classList.add("correct-answer");
     document.getElementById("result-text").textContent = "Correct!";
     document.getElementById("result-text").className = "result-text correct";
-    if (state.bestStreak > prevBest) triggerCelebration(state.bestStreak);
+    if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+    if (!state.celebratedNewBest && state.streak > (state.bestStreaks[state.difficulty] || 0)) {
+      state.celebratedNewBest = true;
+      triggerCelebration(state.bestStreak);
+    }
   } else {
     state.wrong++;
     state.streak = 0;
+    state.celebratedNewBest = false;
     state.progress[answerCode].wrong++;
     input.classList.add("wrong-answer");
     document.getElementById("result-text").textContent =
@@ -426,7 +432,6 @@ function handleAnswer(chosen, btnEl) {
 
   const correct = chosen.code === state.currentQuestion.answer.code;
   const answerCode = state.currentQuestion.answer.code;
-  const prevBest = state.bestStreak;
 
   // Init progress entry
   if (!state.progress[answerCode]) {
@@ -441,10 +446,14 @@ function handleAnswer(chosen, btnEl) {
     btnEl.classList.add("correct-answer");
     document.getElementById("result-text").textContent = "Correct!";
     document.getElementById("result-text").className = "result-text correct";
-    if (state.bestStreak > prevBest) triggerCelebration(state.bestStreak);
+    if (!state.celebratedNewBest && state.streak > (state.bestStreaks[state.difficulty] || 0)) {
+      state.celebratedNewBest = true;
+      triggerCelebration(state.bestStreak);
+    }
   } else {
     state.wrong++;
     state.streak = 0;
+    state.celebratedNewBest = false;
     state.progress[answerCode].wrong++;
     btnEl.classList.add("wrong-answer");
     document.getElementById("result-text").textContent =
