@@ -213,7 +213,7 @@ function newQuestion() {
 
   if (state.difficulty === "beast") {
     // Beast mode: autocomplete text input
-    optContainer.className = "options";
+    optContainer.className = "options beast";
     renderBeastInput(optContainer);
   } else {
     // Multiple choice modes
