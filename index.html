@@ -122,6 +122,7 @@
       display: flex;
       gap: 8px;
       justify-content: center;
+      flex-wrap: wrap;
       margin-bottom: 20px;
     }
 
@@ -203,7 +204,19 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #111;
+      background: var(--surface);
+      position: relative;
+    }
+
+    .flag-display::before {
+      content: '';
+      position: absolute;
+      inset: -20px;
+      background-image: var(--flag-url);
+      background-size: cover;
+      background-position: center;
+      filter: blur(24px) saturate(1.8) brightness(0.7);
+      opacity: 0.7;
     }
 
     .flag-display img {
@@ -211,6 +224,9 @@
       height: 100%;
       object-fit: contain;
       display: block;
+      position: relative;
+      z-index: 1;
+      filter: drop-shadow(0 2px 8px rgba(0,0,0,0.2));
     }
 
     .quiz-prompt {
@@ -227,6 +243,10 @@
 
     .options.cols-3 {
       grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    .options.cols-4 {
+      grid-template-columns: 1fr 1fr 1fr 1fr;
     }
 
     .option-btn {
@@ -368,12 +388,31 @@
       box-shadow: 0 4px 16px rgba(0,0,0,0.3);
     }
 
-    .flag-card img {
-      width: 100%;
+    .flag-card-img {
+      position: relative;
+      overflow: hidden;
       aspect-ratio: 3/2;
+      background: var(--surface);
+    }
+
+    .flag-card-img::before {
+      content: '';
+      position: absolute;
+      inset: -10px;
+      background-image: var(--flag-url);
+      background-size: cover;
+      background-position: center;
+      filter: blur(16px) saturate(1.5) brightness(0.7);
+      opacity: 0.6;
+    }
+
+    .flag-card-img img {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
       object-fit: contain;
       display: block;
-      background: #111;
     }
 
     .flag-card-name {
@@ -416,11 +455,30 @@
       to { opacity: 1; transform: scale(1) translateY(0); }
     }
 
-    .modal img {
-      width: 100%;
+    .modal-flag-wrap {
+      position: relative;
+      overflow: hidden;
       aspect-ratio: 3/2;
+      background: var(--surface);
+    }
+
+    .modal-flag-wrap::before {
+      content: '';
+      position: absolute;
+      inset: -20px;
+      background-image: var(--flag-url);
+      background-size: cover;
+      background-position: center;
+      filter: blur(24px) saturate(1.8) brightness(0.7);
+      opacity: 0.7;
+    }
+
+    .modal-flag-wrap img {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
       object-fit: contain;
-      background: #111;
       display: block;
     }
 
@@ -568,10 +626,89 @@
       font-style: italic;
     }
 
+    /* ---- Beast Mode Autocomplete ---- */
+    .beast-input-wrap {
+      position: relative;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .beast-input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .beast-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .beast-input:focus {
+      border-color: var(--accent);
+    }
+
+    .beast-input.correct-answer {
+      border-color: var(--correct);
+      background: var(--correct-bg);
+      color: var(--correct);
+    }
+
+    .beast-input.wrong-answer {
+      border-color: var(--wrong);
+      background: var(--wrong-bg);
+      color: var(--wrong);
+    }
+
+    .beast-dropdown {
+      position: absolute;
+      top: calc(100% + 2px);
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      max-height: 220px;
+      overflow-y: auto;
+      z-index: 10;
+      display: none;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+
+    .beast-dropdown.open {
+      display: block;
+    }
+
+    .beast-option {
+      padding: 10px 16px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: background 0.1s;
+    }
+
+    .beast-option:hover,
+    .beast-option.highlighted {
+      background: var(--surface-hover);
+    }
+
+    .beast-option .match-highlight {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
     /* ---- Responsive ---- */
     @media (max-width: 480px) {
-      .options, .options.cols-3 {
+      .options {
         grid-template-columns: 1fr;
+      }
+
+      .options.cols-3, .options.cols-4 {
+        grid-template-columns: 1fr 1fr;
       }
 
       .flag-grid {
@@ -701,7 +838,9 @@
 <!-- Detail Modal -->
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal">
-    <img id="modal-flag" src="" alt="Flag" />
+    <div class="modal-flag-wrap" id="modal-flag-wrap">
+      <img id="modal-flag" src="" alt="Flag" />
+    </div>
     <div class="modal-body">
       <h2 id="modal-name"></h2>
       <p id="modal-continent"></p>
