@@ -211,8 +211,8 @@ const COUNTRIES = [
   { name: "Vanuatu", code: "vu", continent: "Oceania" },
 ];
 
-function getFlagUrl(code, size = 256) {
-  return `https://flagcdn.com/w${size}/${code}.png`;
+function getFlagUrl(code) {
+  return `https://flagcdn.com/${code}.svg`;
 }
 
 function getCountriesByContinent(continent) {
