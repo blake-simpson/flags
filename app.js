@@ -199,7 +199,12 @@ function newQuestion() {
   const pool = getCountriesByContinent(state.quizContinent);
   if (pool.length < 2) return;
 
-  const answer = pool[Math.floor(Math.random() * pool.length)];
+  // Avoid showing the same flag twice in a row
+  const prevCode = state.currentQuestion?.answer?.code;
+  const eligible = pool.length > 1 && prevCode
+    ? pool.filter((c) => c.code !== prevCode)
+    : pool;
+  const answer = eligible[Math.floor(Math.random() * eligible.length)];
 
   state.currentQuestion = { answer, options: [] };
 
