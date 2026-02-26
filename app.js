@@ -329,6 +329,7 @@ function renderBeastInput(container) {
       if (highlighted) highlighted.scrollIntoView({ block: "nearest" });
     } else if (e.key === "Enter") {
       e.preventDefault();
+      e.stopPropagation();
       if (highlightIdx >= 0 && highlightIdx < filtered.length) {
         selectBeastAnswer(filtered[highlightIdx]);
       }
