@@ -30,6 +30,8 @@ let state = {
   progress: {},
 };
 
+let gameMode = "flags";
+
 // ============================================================
 // Persistence
 // ============================================================
@@ -78,20 +80,47 @@ function resetProgress() {
 function switchView(view) {
   // If leaving quiz, end the current session
   if (state.currentView === "quiz" && view !== "quiz") {
-    endQuizSession();
+    if (gameMode === "flags") endQuizSession();
+    else CountriesGame.endSession();
   }
 
   state.currentView = view;
-  document.querySelectorAll("nav button").forEach((btn) => {
+  document.querySelectorAll("nav button[data-view]").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.view === view);
   });
-  document.querySelectorAll(".view").forEach((v) => {
-    v.classList.toggle("active", v.id === view + "-view");
+
+  // Hide all views, show the right one for current game mode
+  document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
+  const prefix = gameMode === "countries" ? "countries-" : "";
+  const viewEl = document.getElementById(prefix + view + "-view");
+  if (viewEl) viewEl.classList.add("active");
+
+  if (gameMode === "flags") {
+    if (view === "quiz") newQuestion();
+    if (view === "study") renderStudy();
+    if (view === "progress") renderProgress();
+  } else {
+    CountriesGame.switchView(view);
+  }
+}
+
+function switchGameMode(mode) {
+  if (mode === gameMode) return;
+
+  if (gameMode === "flags" && state.currentView === "quiz") endQuizSession();
+  if (gameMode === "countries" && state.currentView === "quiz") CountriesGame.endSession();
+
+  gameMode = mode;
+  document.querySelectorAll("nav button[data-mode]").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.mode === mode);
   });
 
-  if (view === "quiz") newQuestion();
-  if (view === "study") renderStudy();
-  if (view === "progress") renderProgress();
+  // Re-render current view in new mode
+  switchView(state.currentView);
+
+  if (mode === "countries") {
+    CountriesGame.init();
+  }
 }
 
 function endQuizSession() {
@@ -105,8 +134,11 @@ function endQuizSession() {
   updateScoreboard();
 }
 
-document.querySelectorAll("nav button").forEach((btn) => {
+document.querySelectorAll("nav button[data-view]").forEach((btn) => {
   btn.addEventListener("click", () => switchView(btn.dataset.view));
+});
+document.querySelectorAll("nav button[data-mode]").forEach((btn) => {
+  btn.addEventListener("click", () => switchGameMode(btn.dataset.mode));
 });
 
 // ============================================================
@@ -549,6 +581,12 @@ document.getElementById("next-btn").addEventListener("click", newQuestion);
 // Keyboard shortcut: press number keys or Enter/Space to advance
 document.addEventListener("keydown", (e) => {
   if (state.currentView !== "quiz") return;
+
+  // Delegate to countries game when in countries mode
+  if (gameMode === "countries") {
+    CountriesGame.handleKeydown(e);
+    return;
+  }
 
   // In beast mode, let the input handle its own keys
   if (state.difficulty === "beast" && !state.answered) return;
