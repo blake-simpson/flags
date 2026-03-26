@@ -119,6 +119,40 @@ const CountriesGame = (() => {
   }
 
   // ============================================================
+  // Antimeridian Fix
+  // ============================================================
+  // Countries like Russia, Fiji, and Kiribati have polygons that
+  // cross the 180° meridian. Leaflet draws these "the wrong way"
+  // as a band across the entire map. Fix by normalizing coordinates
+  // so no single ring crosses the antimeridian.
+  function fixAntimeridian(geojson) {
+    geojson.features.forEach(feature => {
+      const geom = feature.geometry;
+      if (geom.type === "Polygon") {
+        geom.coordinates = fixPolygonRings(geom.coordinates);
+      } else if (geom.type === "MultiPolygon") {
+        geom.coordinates = geom.coordinates.map(poly => fixPolygonRings(poly));
+      }
+    });
+    return geojson;
+  }
+
+  function fixPolygonRings(rings) {
+    return rings.map(ring => {
+      let minLng = Infinity, maxLng = -Infinity;
+      for (let i = 0; i < ring.length; i++) {
+        if (ring[i][0] < minLng) minLng = ring[i][0];
+        if (ring[i][0] > maxLng) maxLng = ring[i][0];
+      }
+      // If the ring spans more than 180° of longitude, it crosses the antimeridian
+      if (maxLng - minLng > 180) {
+        return ring.map(c => c[0] < 0 ? [c[0] + 360, c[1]] : [c[0], c[1]]);
+      }
+      return ring;
+    });
+  }
+
+  // ============================================================
   // Persistence
   // ============================================================
   function loadProgress() {
@@ -189,6 +223,7 @@ const CountriesGame = (() => {
 
       const topology = await topoResp.json();
       geoJsonData = topojson.feature(topology, topology.objects.countries);
+      fixAntimeridian(geoJsonData);
 
       // Create quiz map
       quizMap = createMap("countries-quiz-map");
@@ -373,10 +408,10 @@ const CountriesGame = (() => {
       targetLayer.setStyle(S_HIGHLIGHT);
       targetLayer.bringToFront();
 
-      // Zoom varies by difficulty
-      let padAmount = 1.5, maxZoom = 6;
-      if (state.difficulty === "easy") { padAmount = 0.5; maxZoom = 7; }
-      else if (state.difficulty === "hard" || state.difficulty === "beast") { padAmount = 2.5; maxZoom = 4; }
+      // Zoom varies by difficulty — extra padding shows surrounding countries for context
+      let padAmount = 2.0, maxZoom = 5;
+      if (state.difficulty === "easy") { padAmount = 1.0; maxZoom = 6; }
+      else if (state.difficulty === "hard" || state.difficulty === "beast") { padAmount = 3.0; maxZoom = 4; }
 
       quizMap.fitBounds(targetLayer.getBounds().pad(padAmount), {
         maxZoom,
