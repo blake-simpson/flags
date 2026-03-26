@@ -56,7 +56,7 @@ const CountriesGame = (() => {
     "800":"ug","804":"ua","807":"mk","818":"eg","826":"gb","834":"tz",
     "840":"us","854":"bf","858":"uy","860":"uz","862":"ve","882":"ws",
     "887":"ye","894":"zm",
-    "-99":"xk","158":"tw",
+    "204":"bj","-99":"xk","158":"tw",
   };
 
   // Map state
@@ -116,6 +116,48 @@ const CountriesGame = (() => {
       link.onload = resolve;
       document.head.appendChild(link);
     });
+  }
+
+  // ============================================================
+  // GeoJSON Post-Processing
+  // ============================================================
+  // The world-atlas TopoJSON has duplicate IDs (e.g. Australia "036"
+  // appears twice: mainland + Ashmore & Cartier Islands) and some
+  // features with undefined IDs (e.g. Kosovo). This function merges
+  // duplicates into single MultiPolygon features and assigns IDs to
+  // known undefined-ID features by matching their topology name.
+  const NAME_TO_NUM = { "Kosovo": "-99" };
+
+  function fixFeatures(geojson) {
+    // Assign IDs to known features that have undefined IDs
+    geojson.features.forEach(f => {
+      if (f.id === undefined && f.properties && NAME_TO_NUM[f.properties.name]) {
+        f.id = NAME_TO_NUM[f.properties.name];
+      }
+    });
+
+    // Merge features that share the same ID
+    const byId = {};
+    const order = [];
+    geojson.features.forEach(f => {
+      const id = String(f.id);
+      if (!byId[id]) {
+        byId[id] = f;
+        order.push(id);
+      } else {
+        // Merge geometry into the existing feature
+        const existing = byId[id];
+        const toPolygons = geom => {
+          if (geom.type === "MultiPolygon") return geom.coordinates;
+          if (geom.type === "Polygon") return [geom.coordinates];
+          return [];
+        };
+        const merged = [...toPolygons(existing.geometry), ...toPolygons(f.geometry)];
+        existing.geometry = { type: "MultiPolygon", coordinates: merged };
+      }
+    });
+    geojson.features = order.map(id => byId[id]);
+    return geojson;
   }
 
   // ============================================================
@@ -223,6 +265,7 @@ const CountriesGame = (() => {
 
       const topology = await topoResp.json();
       geoJsonData = topojson.feature(topology, topology.objects.countries);
+      fixFeatures(geoJsonData);
       fixAntimeridian(geoJsonData);
 
       // Create quiz map
